@@ -29,7 +29,21 @@ export default {
 		console.log("> init:orchestration:env ", env);
 		console.log("> init:orchestration:ctx ", ctx);
 		
-		return new Response("> hello:worker:1.0.1");
+		return new Response(`
+> hello:worker:1.0.2
+
+${JSON.stringify(request, null, 2)}
+
+${JSON.stringify(env, null, 2)}
+
+${JSON.stringify(ctx, null, 2)}
+
+		`);
+
+
+
+
+
 		// return new Response("", {
 		// 	status: 307,
 		// 	headers: new Headers({

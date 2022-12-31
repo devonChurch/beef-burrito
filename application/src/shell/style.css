@@ -1,0 +1,27 @@
+.shell {
+    --light-color: #a3b6e3;
+    --neutral-color: #004bff;
+    --dark-color: #1a3880;
+
+    background: var(--light-color);
+    border: 2px solid var(--neutral-color);
+    border-radius: 6px;
+    color: var(--dark-color);
+    padding: 24px;
+    font-family: sans-serif;
+}
+
+.shell__heading {
+    margin: 0;
+    text-decoration: underline;
+}
+
+.shell__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.shell__item {
+    padding: 12px 0;
+}

@@ -1,3 +1,5 @@
+import { config } from "./config";
+
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
  *
@@ -28,20 +30,25 @@ export default {
 		console.log("> init:orchestration:request ", request);
 		console.log("> init:orchestration:env ", env);
 		console.log("> init:orchestration:ctx ", ctx);
+
+		const url = new URL(request.url);
+		
+		if (url.host.startsWith("config.")) {
+			return new Response(
+				// Pretty format
+				JSON.stringify(config, null, 2)
+			);
+		}
 		
 		return new Response(`
-> hello:worker:1.0.2
+> worker:init:1.0.2
 
-${JSON.stringify(request, null, 2)}
-
-${JSON.stringify(env, null, 2)}
-
-${JSON.stringify(ctx, null, 2)}
-
+> worker:config:
+  + url: ${request.url}
 		`);
 
 
-
+		// "url": "https://orchestration.devonchurch.workers.dev/",
 
 
 		// return new Response("", {

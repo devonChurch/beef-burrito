@@ -25,12 +25,16 @@ export default {
 		env: Env,
 		ctx: ExecutionContext
 	): Promise<Response> {
-		// return new Response("Hello World!");
-		return new Response("", {
-			status: 307,
-			headers: new Headers({
-				Location: "http://localhost:8080"
-			})
-		})
+		console.log("> init:orchestration:request ", request);
+		console.log("> init:orchestration:env ", env);
+		console.log("> init:orchestration:ctx ", ctx);
+		
+		return new Response("> hello:worker:1.0.1");
+		// return new Response("", {
+		// 	status: 307,
+		// 	headers: new Headers({
+		// 		Location: "http://localhost:8080"
+		// 	})
+		// });
 	},
 };

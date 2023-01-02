@@ -10,12 +10,13 @@
     "build:potato": "npm run build -- --env app=potato",
     "watch": "webpack --watch",
     "start": "webpack serve",
-    "start:shell": "npm run start -- --env app=shell", 
+    "start:shell": "npm run start -- --env app=shell",
     "start:potato": "npm run start -- --env app=potato"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/js-cookie": "^3.0.2",
     "@webpack-cli/generators": "^3.0.1",
     "css-loader": "^6.7.3",
     "html-webpack-plugin": "^5.5.0",

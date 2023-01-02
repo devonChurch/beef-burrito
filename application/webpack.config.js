@@ -24,6 +24,7 @@ const createBaseConfig = ({ build, mode, publicPath }) => ({
   devServer: {
     open: false,
     host: "localhost",
+    // https: true,
   },
   plugins: [
     new webpack.DefinePlugin({

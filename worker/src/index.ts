@@ -1,3 +1,4 @@
+import * as Cookies from 'es-cookie';
 import { config } from "./config";
 import { fetchAsset } from "./application";
 
@@ -48,14 +49,31 @@ export default {
       );
     }
 
-    if (url.host.startsWith("composer.") && request.method === "POST" && url.pathname.startsWith("set")) {
+    if (url.host.startsWith("composer.") && request.method === "POST" && url.pathname.startsWith("/set")) {
       return new Response(
         // Pretty format (readability > minification for experimentation).
-        JSON.stringify(config, null, 2),
+        JSON.stringify({
+			key: "composer-localhost%3A8000",
+			value: "{%22application%22:%22potato%22%2C%22environment%22:%22production%22%2C%22build%22:%22bar%22}"
+		}, null, 2),
 		{
 			headers: {
 				"Content-Type": "application/json",
-				"Set-Cookie": `composer-localhost%3A8000={%22application%22:%22potato%22%2C%22environment%22:%22production%22%2C%22build%22:%22bar%22}; path=/;`
+				"Access-Control-Allow-Credentials": "true",
+				"Access-Control-Allow-Origin": request.headers.get("origin") ?? "", // request.headers.or // "http://localhost:8000",
+				"Access-Control-Expose-Headers": "Set-Cookie, X-Banana",
+				"Set-Cookie": Cookies.encode(
+					'foo',
+					'bar',
+				{
+					secure: true,
+					expires: 7,
+					path: "/",
+					domain: "beef-burrito.devon.pizza",
+					sameSite: "none"
+				}),
+				// "Set-Cookie": `composer-localhost%3A8000={%22application%22:%22potato%22%2C%22environment%22:%22production%22%2C%22build%22:%22bar%22}; Path=/; Domain=beef-burrito.devon.pizza; SameSite=None; Secure; Max-Age=999999;`,
+				"X-Banana": "POTATO!",
 			}
 		}
       );

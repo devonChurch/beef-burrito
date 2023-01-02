@@ -5,7 +5,8 @@ compatibility_date = "2022-12-29"
 routes = [
 	{ pattern = "shell.beef-burrito.devon.pizza", custom_domain = true },
 	{ pattern = "config.beef-burrito.devon.pizza", custom_domain = true },
-	{ pattern = "potato.beef-burrito.devon.pizza", custom_domain = true }
+	{ pattern = "potato.beef-burrito.devon.pizza", custom_domain = true },
+	{ pattern = "composer.beef-burrito.devon.pizza", custom_domain = true }
 ]
 
 [[r2_buckets]]

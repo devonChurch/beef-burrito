@@ -34,8 +34,12 @@ export default {
     console.log("> worker:request: ", JSON.stringify(request, null, 2));
     console.log("> worker:env: ", JSON.stringify(env, null, 2));
     console.log("> worker:ctx: ", JSON.stringify(ctx, null, 2));
+    console.log("> worker:cookies: ", request.headers.get("Cookie"));
 
     const url = new URL(request.url);
+
+    // request.headers.referer
+    // "referer": "http://localhost:8000/",
 
     if (url.host.startsWith("config.")) {
       return new Response(
@@ -44,12 +48,25 @@ export default {
       );
     }
 
+    if (url.host.startsWith("composer.") && request.method === "POST" && url.pathname.startsWith("set")) {
+      return new Response(
+        // Pretty format (readability > minification for experimentation).
+        JSON.stringify(config, null, 2),
+		{
+			headers: {
+				"Content-Type": "application/json",
+				"Set-Cookie": `composer-localhost%3A8000={%22application%22:%22potato%22%2C%22environment%22:%22production%22%2C%22build%22:%22bar%22}; path=/;`
+			}
+		}
+      );
+    }
+
     if (url.host.startsWith("shell.")) {
-		return fetchAsset({ url, r2Bucket: env.SHELL_BUCKET });
+      return fetchAsset({ url, r2Bucket: env.SHELL_BUCKET });
     }
 
     if (url.host.startsWith("potato.")) {
-		return fetchAsset({ url, r2Bucket: env.POTATO_BUCKET });
+      return fetchAsset({ url, r2Bucket: env.POTATO_BUCKET });
     }
 
     return new Response(`

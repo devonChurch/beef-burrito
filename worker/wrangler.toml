@@ -7,3 +7,11 @@ routes = [
 	{ pattern = "config.beef-burrito.devon.pizza", custom_domain = true },
 	{ pattern = "potato.beef-burrito.devon.pizza", custom_domain = true }
 ]
+
+[[r2_buckets]]
+binding = 'SHELL_BUCKET' # <~ valid JavaScript variable name
+bucket_name = 'beef-burrito-shell'
+
+[[r2_buckets]]
+binding = 'POTATO_BUCKET' # <~ valid JavaScript variable name
+bucket_name = 'beef-burrito-potato'

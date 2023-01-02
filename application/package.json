@@ -5,13 +5,13 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npm run build:prod",
-    "build:dev": "webpack --mode=development",
-    "build:prod": "webpack --mode=production --node-env=production",
+    "build": "webpack --mode=production --node-env=production",
+    "build:shell": "npm run build -- --env app=shell",
+    "build:potato": "npm run build -- --env app=potato",
     "watch": "webpack --watch",
     "start": "webpack serve",
-    "start:shell": "webpack serve --env app=shell", 
-    "start:potato": "webpack serve --env app=potato"
+    "start:shell": "npm run start -- --env app=shell", 
+    "start:potato": "npm run start -- --env app=potato"
   },
   "author": "",
   "license": "ISC",

@@ -17,7 +17,7 @@ import "./style.css";
 
     document.body.innerHTML = template;
 
-    const potato = await import("beefBurritoPotato/App").then(module => module.start());
+    const potato = await import("potato/App").then(module => module.start());
     const element = document.querySelector("main");
 
     console.log("> shell:potato: ", potato);

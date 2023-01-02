@@ -1,6 +1,8 @@
 // Generated using webpack-cli https://github.com/webpack/webpack-cli
 
-const path = require("path");
+const path = require("node:path");
+const util = require("node:util");
+const exec = util.promisify(require("node:child_process").exec);
 const webpack = require("webpack");
 const { merge } = require("webpack-merge");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
@@ -9,8 +11,16 @@ const { ModuleFederationPlugin } = webpack.container;
 
 const isProduction = process.env.NODE_ENV == "production";
 
-const createBaseConfig = ({ build }) => ({
-  mode: isProduction ? "production" : "development",
+const getConfig = () =>
+  fetch("https://config.beef-burrito.devon.pizza/").then((response) =>
+    response.json()
+  );
+
+const createBaseConfig = ({ build, mode, publicPath }) => ({
+  mode,
+  output: {
+    publicPath,
+  },
   devServer: {
     open: false,
     host: "localhost",
@@ -18,7 +28,7 @@ const createBaseConfig = ({ build }) => ({
   plugins: [
     new webpack.DefinePlugin({
       "process.env.BUILD": JSON.stringify(build),
-      "process.env.PUBLIC_PATH": '"???"',
+      "process.env.PUBLIC_PATH": JSON.stringify(publicPath),
     }),
 
     isProduction && new MiniCssExtractPlugin(),
@@ -48,10 +58,10 @@ const createBaseConfig = ({ build }) => ({
   },
 });
 
-const createShellConfig = ({ build }) => ({
+const createShellConfig = ({ build, remotes }) => ({
   entry: "./src/shell/index.ts",
   output: {
-    path: path.resolve(__dirname, `dist/shell/_builds/${build}`)
+    path: path.resolve(__dirname, `dist/shell/_builds/${build}`),
   },
   devServer: {
     port: 8000,
@@ -62,10 +72,18 @@ const createShellConfig = ({ build }) => ({
     }),
 
     new ModuleFederationPlugin({
-      name: "beefBurritoShell",
-      remotes: {
-        beefBurritoPotato: "beefBurritoPotato@http://localhost:8001/remoteEntry.js",
-      },
+      name: "shell",
+      // @example
+      // remotes: {
+      //     potato: "potato@http://localhost:8001/remoteEntry.js",
+      // },
+      remotes: Object.entries(remotes).reduce(
+        (acc, [key, value]) => ({
+          ...acc,
+          [key]: `${key}@${value}`,
+        }),
+        {}
+      ),
     }),
   ].filter(Boolean),
 });
@@ -80,8 +98,8 @@ const createPotatoConfig = ({ build }) => ({
   },
   plugins: [
     new ModuleFederationPlugin({
-      name: "beefBurritoPotato",
-      filename: 'remoteEntry.js',
+      name: "potato",
+      filename: "remoteEntry.js",
       exposes: {
         "./App": "./src/potato/app.ts",
       },
@@ -89,27 +107,69 @@ const createPotatoConfig = ({ build }) => ({
   ].filter(Boolean),
 });
 
-module.exports = (env, argv) => {
-    const application = env.app ?? (() => {
-        throw new Error(
-            "Webpack requires an application reference. --env app=shell"
-          );
+module.exports = async (env, argv) => {
+  const config = await getConfig();
+
+  console.log("> webpack:config: ", JSON.stringify(config, null, 2));
+
+  const application =
+    env.app ??
+    (() => {
+      throw new Error(
+        "Webpack requires an application reference. --env app=shell"
+      );
     })();
 
-  const build = !isProduction
-    ? "local"
-    : env.build ??
-      (() => {
-        throw new Error(
-          "Production builds require a build directory. --env build=foo"
-        );
-      })();
+  console.log("> webpack:application: ", application);
 
+  // Create URL friendly version of the current Git branch.
+  //
+  // @example
+  // + Before: "feature/foo#bar"
+  // + After: "feature-foo-bar"
+  //
+  // @example
+  // + Before: "release/1.2.3#foo"
+  // + After: "release-1-2-3-foo"
+  const build = env.build ?? (await exec("git branch --show-current")).stdout.replace(/\W/g, "-");
 
-  return {
-    shell: () => merge(createBaseConfig({ build }), createShellConfig({ build })),
-    potato: () => merge(createBaseConfig({ build }), createPotatoConfig({ build })),
-  }[application]?.() ?? (() => {
-    throw new Error("Cannot find Webpack config for application reference")
-  })();
+  console.log("> webpack:build: ", build);
+
+  const mode = isProduction ? "production" : "development";
+
+  const publicPath =
+    (isProduction ? "https" : "http") +
+    "://" +
+    config[application].environment[mode].host +
+    "/";
+
+  const createRemote = (target) =>
+    "https://" +
+    config[target].environment.production.host +
+    "/remoteEntry.js";
+
+  console.log("> webpack:publicPath: ", publicPath);
+
+  return (
+    {
+      shell: () =>
+        merge(
+          createBaseConfig({ build, mode, publicPath }),
+          createShellConfig({
+            build,
+            remotes: {
+              potato: createRemote("potato"),
+            },
+          })
+        ),
+      potato: () =>
+        merge(
+          createBaseConfig({ build, mode, publicPath }),
+          createPotatoConfig({ build })
+        ),
+    }[application]?.() ??
+    (() => {
+      throw new Error("Cannot find Webpack config for application reference");
+    })()
+  );
 };

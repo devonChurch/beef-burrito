@@ -1,6 +1,6 @@
 export const config = {
     shell: {
-        environments: {
+        environment: {
             production: {
                 host: "shell.beef-burrito.devon.pizza"
             },
@@ -10,7 +10,7 @@ export const config = {
         }
     },
     potato: {
-        environments: {
+        environment: {
             production: {
                 host: "potato.beef-burrito.devon.pizza"
             },

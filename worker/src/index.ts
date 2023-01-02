@@ -1,4 +1,5 @@
 import { config } from "./config";
+import { fetchAsset } from "./application";
 
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
@@ -21,6 +22,7 @@ export interface Env {
   // MY_BUCKET: R2Bucket;
 
   SHELL_BUCKET: R2Bucket;
+  POTATO_BUCKET: R2Bucket;
 }
 
 export default {
@@ -29,61 +31,31 @@ export default {
     env: Env,
     ctx: ExecutionContext
   ): Promise<Response> {
-    console.log("> worker:request: ", request);
-    console.log("> worker:env: ", env);
-    console.log("> worker:ctx: ", ctx);
+    console.log("> worker:request: ", JSON.stringify(request, null, 2));
+    console.log("> worker:env: ", JSON.stringify(env, null, 2));
+    console.log("> worker:ctx: ", JSON.stringify(ctx, null, 2));
 
     const url = new URL(request.url);
 
     if (url.host.startsWith("config.")) {
       return new Response(
-        // Pretty format
+        // Pretty format (readability > minification for experimentation).
         JSON.stringify(config, null, 2)
       );
     }
 
     if (url.host.startsWith("shell.")) {
-      const key = (() => {
-        // Remove prepending or appending slash(es).
-        //
-        // @example
-        // + Before: "/foo/bar.js"
-        // + After:  "foo/bar.js"
-        //
-        // @example
-        // + Before: "/foo/bar/baz/"
-        // + After:  "foo/bar/baz"
-        const sanitized = url.pathname.replace(/^\/|\/$/g, "");
+		return fetchAsset({ url, r2Bucket: env.SHELL_BUCKET });
+    }
 
-        // Xxxxxx xxxx
-        const hasFileExtension = /\..*$/.test(sanitized);
-
-        return hasFileExtension
-          ? `_builds/main/${sanitized}`
-          : "_builds/main/index.html";
-      })();
-
-	  console.log("> worker:r2-key: ", key);
-	  
-      const object = await env.SHELL_BUCKET.get(key);
-	  
-	  console.log("> worker:r2-object: ", object);
-
-      if (object === null) {
-        return new Response("Object Not Found", { status: 404 });
-      }
-
-      const headers = new Headers();
-      object.writeHttpMetadata(headers);
-      headers.set("etag", object.httpEtag);
-
-      return new Response(object.body, {
-        headers,
-      });
+    if (url.host.startsWith("potato.")) {
+		return fetchAsset({ url, r2Bucket: env.POTATO_BUCKET });
     }
 
     return new Response(`
-> worker:init:1.0.2
+> worker:init:1.0.3
+
+> worker:no-trigger-found
 
 > worker:config:
   + url: ${request.url}

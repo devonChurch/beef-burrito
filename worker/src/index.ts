@@ -12,6 +12,17 @@ import { fetchAsset } from "./application";
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
+type ComposerEntry = {
+	application: string,
+	environment: "development" | "production",
+	build: string,
+};
+
+type ComposerApiSetBody = {
+	base: ComposerEntry,
+	dependencies: ComposerEntry[],
+};
+
 export interface Env {
   // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
   // MY_KV_NAMESPACE: KVNamespace;
@@ -49,31 +60,88 @@ export default {
       );
     }
 
-    if (url.host.startsWith("composer.") && request.method === "POST" && url.pathname.startsWith("/set")) {
+    if (url.host.startsWith("composer.") && request.method === "POST" && url.pathname.startsWith("/api/set")) {
+
+		const { base, dependencies } = await request?.json() as ComposerApiSetBody ?? {};
+
+		/**
+			{
+				base: {
+					application: "",
+					environment: "",
+					build: "",
+				},
+				dependencies: [
+					{
+						application: "",
+						environment: "",
+						build: "",
+					},
+					{
+						application: "",
+						environment: "",
+						build: "",
+					},
+				]
+			}
+		*/
+
+		const createSanitizedEntry = ({ application, environment, build }: ComposerEntry) => ({
+			...application && { application },
+			...environment && { environment },
+			...build && { build },
+		});
+
+		const cookieKey = base.application;
+		
+		const cookieValue = dependencies.map(createSanitizedEntry);
+
+		const cookieEncoded = Cookies.encode(
+			cookieKey,
+			JSON.stringify(dependencies.map(createSanitizedEntry)),
+		{
+			secure: true,
+			expires: 7,
+			path: "/",
+			domain: "beef-burrito.devon.pizza",
+			sameSite: "none"
+		});
+
+		console.log("> worker:api/set:key ", cookieKey);
+		console.log("> worker:api/set:value ", cookieValue);
+		console.log("> worker:api/set:encoded ", cookieEncoded);
+
+		const cookieBody = `
+
++ ---------------------- +
+| Generated Composition: |
++ ---------------------- +
+
+Cookie Key:
+-----------
+${cookieKey}
+
+Cookie Value:
+-------------
+${JSON.stringify(cookieValue, null, 2)}
+
+Cookie Encoded:
+---------------
+${cookieEncoded}
+		`;
+
       return new Response(
-        // Pretty format (readability > minification for experimentation).
-        JSON.stringify({
-			key: "composer-localhost%3A8000",
-			value: "{%22application%22:%22potato%22%2C%22environment%22:%22production%22%2C%22build%22:%22bar%22}"
-		}, null, 2),
+        // Body:
+		cookieBody,
+
+		// Options:
 		{
 			headers: {
-				"Content-Type": "application/json",
+				"Content-Type": "text/plain",
 				"Access-Control-Allow-Credentials": "true",
-				"Access-Control-Allow-Origin": request.headers.get("origin") ?? "", // request.headers.or // "http://localhost:8000",
-				"Access-Control-Expose-Headers": "Set-Cookie, X-Banana",
-				"Set-Cookie": Cookies.encode(
-					'foo',
-					'bar',
-				{
-					secure: true,
-					expires: 7,
-					path: "/",
-					domain: "beef-burrito.devon.pizza",
-					sameSite: "none"
-				}),
-				// "Set-Cookie": `composer-localhost%3A8000={%22application%22:%22potato%22%2C%22environment%22:%22production%22%2C%22build%22:%22bar%22}; Path=/; Domain=beef-burrito.devon.pizza; SameSite=None; Secure; Max-Age=999999;`,
-				"X-Banana": "POTATO!",
+				"Access-Control-Allow-Origin": request.headers.get("origin") ?? "",
+				"Access-Control-Expose-Headers": "Set-Cookie",
+				"Set-Cookie": cookieEncoded,
 			}
 		}
       );

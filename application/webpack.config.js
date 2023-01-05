@@ -7,6 +7,7 @@ const webpack = require("webpack");
 const { merge } = require("webpack-merge");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const CopyPlugin = require("copy-webpack-plugin");
 const { ModuleFederationPlugin } = webpack.container;
 
 const isProduction = process.env.NODE_ENV == "production";
@@ -25,6 +26,7 @@ const createBaseConfig = ({ build, mode, publicPath }) => ({
     open: false,
     host: "localhost",
     // https: true,
+    allowedHosts: [".beef-burrito.devon.pizza"],
   },
   plugins: [
     new webpack.DefinePlugin({
@@ -33,7 +35,18 @@ const createBaseConfig = ({ build, mode, publicPath }) => ({
       "process.env.MODE": JSON.stringify(mode),
     }),
 
+    new HtmlWebpackPlugin({
+      template: "./src/index.html",
+    }),
+
     isProduction && new MiniCssExtractPlugin(),
+
+    new CopyPlugin({
+      patterns: [
+        "./src/favicon.png"
+        // { from: "./favicon.png", to: "dest" },
+      ],
+    }),
   ].filter(Boolean),
   module: {
     rules: [
@@ -69,10 +82,6 @@ const createShellConfig = ({ build, remotes }) => ({
     port: 8000,
   },
   plugins: [
-    new HtmlWebpackPlugin({
-      template: "./src/shell/index.html",
-    }),
-
     new ModuleFederationPlugin({
       name: "shell",
       // @example
@@ -103,7 +112,7 @@ const createPotatoConfig = ({ build }) => ({
       name: "potato",
       filename: "remoteEntry.js",
       exposes: {
-        "./App": "./src/potato/app.ts",
+        "./App": "./src/potato/remoteEntry.ts",
       },
     }),
   ].filter(Boolean),
@@ -133,7 +142,9 @@ module.exports = async (env, argv) => {
   // @example
   // + Before: "release/1.2.3#foo"
   // + After: "release-1-2-3-foo"
-  const build = env.build ?? (await exec("git branch --show-current")).stdout.trim().replace(/\W/g, "-");
+  const build =
+    env.build ??
+    (await exec("git branch --show-current")).stdout.trim().replace(/\W/g, "-");
 
   console.log("> webpack:build: ", build);
 
@@ -147,9 +158,7 @@ module.exports = async (env, argv) => {
     "/";
 
   const createRemote = (target) =>
-    "https://" +
-    config[target].environment.production.host +
-    "/remoteEntry.js";
+    "https://" + config[target].environment.production.host + "/remoteEntry.js";
 
   console.log("> webpack:publicPath: ", publicPath);
 

@@ -1,6 +1,6 @@
 import { config } from "./config";
 import { fetchAsset } from "./application";
-import { setCookie } from "./composer";
+import { setCookie, getCookie } from "./composer";
 
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
@@ -11,8 +11,6 @@ import { setCookie } from "./composer";
  *
  * Learn more at https://developers.cloudflare.com/workers/
  */
-
-
 
 export interface Env {
   // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
@@ -64,12 +62,16 @@ export default {
     if (
       url.host.startsWith("shell.") // Xxxxxx
     ) {
+      const overrides = await getCookie({ request });
+      console.log("> worker:overrides: ", JSON.stringify(overrides));
       return fetchAsset({ url, r2Bucket: env.SHELL_BUCKET });
     }
 
     if (
       url.host.startsWith("potato.") // Xxxxxx
     ) {
+      const overrides = await getCookie({ request });
+      console.log("> worker:overrides: ", JSON.stringify(overrides));
       return fetchAsset({ url, r2Bucket: env.POTATO_BUCKET });
     }
 

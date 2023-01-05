@@ -62,16 +62,26 @@ export default {
     if (
       url.host.startsWith("shell.") // Xxxxxx
     ) {
-      const shouldRedirect =
-        url.host !== config.shell.environment.production.host;
-
-      if (shouldRedirect) {
-        console.log("> worker:shell:redirect: ", url.host);
-        return new Response(`redirect: ${url.host}`);
-      }
-
       const overrides = await getCookie({ request });
       console.log("> worker:shell:overrides: ", JSON.stringify(overrides));
+
+      const targetHost = config.shell.environment[overrides?.environment ?? "production"].host;
+
+      const shouldRedirect = url.host !== targetHost
+
+      if (shouldRedirect) {
+        const redirectLocation = `${overrides?.environment === "production" ? "https" : "http"}://${targetHost}` + url.pathname
+
+        console.log("> worker:shell:redirect: ", `${url.host} -vs- ${targetHost}`);
+        console.log("> worker:shell:location: ", redirectLocation);
+
+        return new Response("", {
+          status: 307,
+          headers: new Headers({
+            Location: redirectLocation,
+          }),
+        });
+      }
 
       return fetchAsset({
         build: overrides?.build ?? "main",
@@ -85,6 +95,24 @@ export default {
     ) {
       const overrides = await getCookie({ request });
       console.log("> worker:potato:overrides: ", JSON.stringify(overrides));
+
+      const targetHost = config.potato.environment[overrides?.environment ?? "production"].host;
+
+      const shouldRedirect = url.host !== targetHost
+
+      if (shouldRedirect) {
+        const redirectLocation = `${overrides?.environment === "production" ? "https" : "http"}://${targetHost}` + url.pathname
+
+        console.log("> worker:potato:redirect: ", `${url.host} -vs- ${targetHost}`);
+        console.log("> worker:potato:location: ", redirectLocation);
+
+        return new Response("", {
+          status: 307,
+          headers: new Headers({
+            Location: redirectLocation,
+          }),
+        });
+      }
 
       return fetchAsset({
         build: overrides?.build ?? "main",

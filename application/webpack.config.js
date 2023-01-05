@@ -30,6 +30,7 @@ const createBaseConfig = ({ build, mode, publicPath }) => ({
     new webpack.DefinePlugin({
       "process.env.BUILD": JSON.stringify(build),
       "process.env.PUBLIC_PATH": JSON.stringify(publicPath),
+      "process.env.MODE": JSON.stringify(mode),
     }),
 
     isProduction && new MiniCssExtractPlugin(),
@@ -132,12 +133,13 @@ module.exports = async (env, argv) => {
   // @example
   // + Before: "release/1.2.3#foo"
   // + After: "release-1-2-3-foo"
-  const build = env.build ?? (await exec("git branch --show-current")).stdout.replace(/\W/g, "-");
+  const build = env.build ?? (await exec("git branch --show-current")).stdout.trim().replace(/\W/g, "-");
 
   console.log("> webpack:build: ", build);
 
   const mode = isProduction ? "production" : "development";
 
+  // const publicPath = "https://" + config[application].environment.production.host +  "/";
   const publicPath =
     (isProduction ? "https" : "http") +
     "://" +

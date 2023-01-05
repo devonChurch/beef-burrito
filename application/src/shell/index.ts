@@ -63,7 +63,7 @@ import "./style.css";
 // setCookieForExpriment();
 
 // const setComposerStatus = async () => {
-//   const composer = await fetch(`https://composer.beef-burrito.devon.pizza/set`, {
+//   const composer = await fetch(`https://composer.beef-burrito.devon.pizza/api/set`, {
 //     method: "POST",
 //     mode: "cors",
 //     credentials: "include"

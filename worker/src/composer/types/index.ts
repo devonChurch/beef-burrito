@@ -1,7 +1,7 @@
 export type ComposerEntry = {
   application: string;
   environment: "development" | "production";
-  build: string;
+  build?: string;
 };
 
 export type ComposerApiSetBody = {

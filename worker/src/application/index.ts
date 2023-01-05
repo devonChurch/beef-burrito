@@ -1,9 +1,14 @@
 type FetchAssetOptions = {
-  url: URL;
+  build: string;
+  pathname: string;
   r2Bucket: R2Bucket;
 };
 
-export const fetchAsset = async ({ url, r2Bucket }: FetchAssetOptions) => {
+export const fetchAsset = async ({
+  pathname,
+  build,
+  r2Bucket,
+}: FetchAssetOptions) => {
   const key = (() => {
     // Remove prepending or appending slash(es).
     //
@@ -14,20 +19,18 @@ export const fetchAsset = async ({ url, r2Bucket }: FetchAssetOptions) => {
     // @example
     // + Before: "/foo/bar/baz/"
     // + After:  "foo/bar/baz"
-    const sanitized = url.pathname.replace(/^\/|\/$/g, "");
+    const sanitized = pathname.replace(/^\/|\/$/g, "");
 
     // Xxxxxx xxxx
     const hasFileExtension = /\..*$/.test(sanitized);
 
     return hasFileExtension
-      ? `_builds/main/${sanitized}`
-      : "_builds/main/index.html";
+      ? `_builds/${build}/${sanitized}`
+      : `_builds/${build}/index.html`;
   })();
-
   console.log("> worker:r2-key: ", key);
 
   const object = await r2Bucket.get(key);
-
   console.log("> worker:r2-object: ", object);
 
   if (object === null) {

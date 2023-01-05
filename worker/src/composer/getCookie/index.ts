@@ -8,7 +8,9 @@ type SetCookieOptions = {
 
 type Dictionary = Record<string, keyof typeof config>;
 
-export const getCookie = async ({ request }: SetCookieOptions) => {
+export const getCookie = async ({
+  request,
+}: SetCookieOptions): Promise<ComposerEntry | undefined> => {
   // STEP 1:
   // -------
   // get referrer
@@ -42,12 +44,15 @@ export const getCookie = async ({ request }: SetCookieOptions) => {
 
   const referer = request.headers.get("referer");
   const refererHost = referer && new URL(referer).host;
-  const isValidReferer = refererHost && dictionary[refererHost];
-  const requestHost = request.headers.get("host");
+  const requestHost = request.headers.get("host") as string;
 
   // google.com
-  const baseKey = isValidReferer ? refererHost : (requestHost as string);
+  // or new window
+  const baseKey = dictionary[refererHost || requestHost];
   console.log("> worker:composer:baseKey ", baseKey);
+
+  const appKey = dictionary[requestHost];
+  console.log("> worker:composer:appKey ", appKey);
 
   // STEP 2:
   // -------
@@ -61,7 +66,16 @@ export const getCookie = async ({ request }: SetCookieOptions) => {
   const cookie = cookies?.[baseKey];
   console.log("> worker:composer:cookie ", cookie);
 
+  const overrideEntries: ComposerEntry[] = cookie ? JSON.parse(cookie) : [];
+
   // STEP 3:
   // -------
   // Pass overrides onto application fetch
+
+  const overrideEntry = overrideEntries.find(
+    (override) => override.application === appKey
+  );
+  console.log("> worker:composer:overrideEntry ", overrideEntry);
+
+  return overrideEntry;
 };

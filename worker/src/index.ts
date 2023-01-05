@@ -62,17 +62,35 @@ export default {
     if (
       url.host.startsWith("shell.") // Xxxxxx
     ) {
+      const shouldRedirect =
+        url.host !== config.shell.environment.production.host;
+
+      if (shouldRedirect) {
+        console.log("> worker:shell:redirect: ", url.host);
+        return new Response(`redirect: ${url.host}`);
+      }
+
       const overrides = await getCookie({ request });
-      console.log("> worker:overrides: ", JSON.stringify(overrides));
-      return fetchAsset({ url, r2Bucket: env.SHELL_BUCKET });
+      console.log("> worker:shell:overrides: ", JSON.stringify(overrides));
+
+      return fetchAsset({
+        build: overrides?.build ?? "main",
+        pathname: url.pathname,
+        r2Bucket: env.SHELL_BUCKET,
+      });
     }
 
     if (
       url.host.startsWith("potato.") // Xxxxxx
     ) {
       const overrides = await getCookie({ request });
-      console.log("> worker:overrides: ", JSON.stringify(overrides));
-      return fetchAsset({ url, r2Bucket: env.POTATO_BUCKET });
+      console.log("> worker:potato:overrides: ", JSON.stringify(overrides));
+
+      return fetchAsset({
+        build: overrides?.build ?? "main",
+        pathname: url.pathname,
+        r2Bucket: env.POTATO_BUCKET,
+      });
     }
 
     return new Response(`

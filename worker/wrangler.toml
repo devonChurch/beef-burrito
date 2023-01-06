@@ -16,3 +16,7 @@ bucket_name = 'beef-burrito-shell'
 [[r2_buckets]]
 binding = 'POTATO_BUCKET' # <~ valid JavaScript variable name
 bucket_name = 'beef-burrito-potato'
+
+[[r2_buckets]]
+binding = 'COMPOSER_BUCKET' # <~ valid JavaScript variable name
+bucket_name = 'beef-burrito-composer'

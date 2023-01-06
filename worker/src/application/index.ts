@@ -33,8 +33,8 @@ export const fetchAsset = async ({
   const object = await r2Bucket.get(key);
   console.log("> worker:r2-object: ", object);
 
-  if (object === null) {
-    return new Response("Object Not Found", { status: 404 });
+  if (!object) {
+    return new Response("", { status: 404 });
   }
 
   const headers = new Headers();

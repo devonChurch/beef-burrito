@@ -18,5 +18,15 @@ export const config = {
                 host: "localhost:8001"
             }
         }
+    },
+    composer: {
+        environment: {
+            production: {
+                host: "composer.beef-burrito.devon.pizza"
+            },
+            development: {
+                host: "localhost:8002"
+            }
+        }
     }
 }

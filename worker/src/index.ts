@@ -24,7 +24,49 @@ export interface Env {
 
   SHELL_BUCKET: R2Bucket;
   POTATO_BUCKET: R2Bucket;
+  COMPOSER_BUCKET: R2Bucket;
 }
+
+type HandleApplicationOptions = {
+  application: keyof typeof config;
+  build: string;
+  r2Bucket: R2Bucket;
+  request: Request;
+  url: URL;
+};
+
+const handleApplication = async (options: HandleApplicationOptions) => {
+  const overrides = await getCookie({ request: options.request });
+  console.log(`> worker:${options.application}:overrides: `, JSON.stringify(overrides));
+  const targetHost =
+    config[options.application].environment[overrides?.environment ?? "production"].host;
+  const shouldRedirect = options.url.host !== targetHost;
+
+  if (shouldRedirect) {
+    const redirectLocation =
+      `${
+        overrides?.environment === "production" ? "https" : "http"
+      }://${targetHost}` + options.url.pathname;
+    console.log(
+      `> worker:${options.application}:redirect: `,
+      `${options.url.host} -vs- ${targetHost}`
+    );
+    console.log(`> worker:${options.application}:location: `, redirectLocation);
+
+    return new Response("", {
+      status: 307,
+      headers: new Headers({
+        Location: redirectLocation,
+      }),
+    });
+  }
+
+  return fetchAsset({
+    build: overrides?.build ?? options.build,
+    pathname: options.url.pathname,
+    r2Bucket: options.r2Bucket,
+  });
+};
 
 export default {
   async fetch(
@@ -38,9 +80,6 @@ export default {
     console.log("> worker:cookies: ", request.headers.get("Cookie"));
 
     const url = new URL(request.url);
-
-    // request.headers.referer
-    // "referer": "http://localhost:8000/",
 
     if (
       url.host.startsWith("config.") // Xxxxx
@@ -60,83 +99,51 @@ export default {
     }
 
     if (
+      url.host.startsWith("composer.") // Xxxxxx
+    ) {
+      return handleApplication({
+        application: "composer",
+        build: "main",
+        r2Bucket: env.COMPOSER_BUCKET,
+        request,
+        url,
+      });
+    }
+
+    if (
       url.host.startsWith("shell.") // Xxxxxx
     ) {
-      const overrides = await getCookie({ request });
-      console.log("> worker:shell:overrides: ", JSON.stringify(overrides));
-
-      const targetHost = config.shell.environment[overrides?.environment ?? "production"].host;
-
-      const shouldRedirect = url.host !== targetHost
-
-      if (shouldRedirect) {
-        const redirectLocation = `${overrides?.environment === "production" ? "https" : "http"}://${targetHost}` + url.pathname
-
-        console.log("> worker:shell:redirect: ", `${url.host} -vs- ${targetHost}`);
-        console.log("> worker:shell:location: ", redirectLocation);
-
-        return new Response("", {
-          status: 307,
-          headers: new Headers({
-            Location: redirectLocation,
-          }),
-        });
-      }
-
-      return fetchAsset({
-        build: overrides?.build ?? "main",
-        pathname: url.pathname,
+      return handleApplication({
+        application: "shell",
+        build: "main",
         r2Bucket: env.SHELL_BUCKET,
+        request,
+        url,
       });
     }
 
     if (
       url.host.startsWith("potato.") // Xxxxxx
     ) {
-      const overrides = await getCookie({ request });
-      console.log("> worker:potato:overrides: ", JSON.stringify(overrides));
-
-      const targetHost = config.potato.environment[overrides?.environment ?? "production"].host;
-
-      const shouldRedirect = url.host !== targetHost
-
-      if (shouldRedirect) {
-        const redirectLocation = `${overrides?.environment === "production" ? "https" : "http"}://${targetHost}` + url.pathname
-
-        console.log("> worker:potato:redirect: ", `${url.host} -vs- ${targetHost}`);
-        console.log("> worker:potato:location: ", redirectLocation);
-
-        return new Response("", {
-          status: 307,
-          headers: new Headers({
-            Location: redirectLocation,
-          }),
-        });
-      }
-
-      return fetchAsset({
-        build: overrides?.build ?? "main",
-        pathname: url.pathname,
+      return handleApplication({
+        application: "potato",
+        build: "main",
         r2Bucket: env.POTATO_BUCKET,
+        request,
+        url,
       });
     }
 
-    return new Response(`
+    return new Response(
+      `
 > worker:init:1.0.3
-
 > worker:no-trigger-found
-
 > worker:config:
   + url: ${request.url}
-		`);
-
-    // "url": "https://orchestration.devonchurch.workers.dev/",
-
-    // return new Response("", {
-    // 	status: 307,
-    // 	headers: new Headers({
-    // 		Location: "http://localhost:8080"
-    // 	})
-    // });
+		`.trim(),
+      {
+        status: 404,
+      }
+    );
   },
 };

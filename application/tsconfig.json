@@ -5,10 +5,13 @@
     "module": "es2022",
     "target": "es5",
     "allowJs": true,
+    "jsx": "react",
     "esModuleInterop": true
   },
   "files": [
     "src/index.d.ts",
-    "src/shell/index.ts"
+    "src/shell/index.ts",
+    "src/potato/index.ts",
+    "src/composer/index.tsx"
   ]
 }

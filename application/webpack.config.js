@@ -42,10 +42,7 @@ const createBaseConfig = ({ build, mode, publicPath }) => ({
     isProduction && new MiniCssExtractPlugin(),
 
     new CopyPlugin({
-      patterns: [
-        "./src/favicon.png"
-        // { from: "./favicon.png", to: "dest" },
-      ],
+      patterns: ["./src/favicon.png"],
     }),
   ].filter(Boolean),
   module: {
@@ -118,6 +115,25 @@ const createPotatoConfig = ({ build }) => ({
   ].filter(Boolean),
 });
 
+const createComposerConfig = ({ build }) => ({
+  entry: "./src/composer/index.tsx",
+  output: {
+    path: path.resolve(__dirname, `dist/composer/_builds/${build}`),
+  },
+  devServer: {
+    port: 8002,
+  },
+  plugins: [
+    new ModuleFederationPlugin({
+      name: "composer",
+      filename: "remoteEntry.js",
+      exposes: {
+        "./App": "./src/composer/remoteEntry.ts",
+      },
+    }),
+  ].filter(Boolean),
+});
+
 module.exports = async (env, argv) => {
   const config = await getConfig();
 
@@ -178,6 +194,11 @@ module.exports = async (env, argv) => {
         merge(
           createBaseConfig({ build, mode, publicPath }),
           createPotatoConfig({ build })
+        ),
+      composer: () =>
+        merge(
+          createBaseConfig({ build, mode, publicPath }),
+          createComposerConfig({ build })
         ),
     }[application]?.() ??
     (() => {

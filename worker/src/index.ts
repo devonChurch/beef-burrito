@@ -1,6 +1,7 @@
-import { config } from "./config";
-import { fetchAsset } from "./application";
-import { setCookie, getCookie } from "./composer";
+import { data as configData } from "./config";
+import { handleAssetRequest } from "./application";
+import { set as setCookie } from "./composer"
+// import { setCookie, getCookie } from "./composer";
 
 /**
  * Welcome to Cloudflare Workers! This is your first worker.
@@ -27,46 +28,50 @@ export interface Env {
   COMPOSER_BUCKET: R2Bucket;
 }
 
-type HandleApplicationOptions = {
-  application: keyof typeof config;
-  build: string;
-  r2Bucket: R2Bucket;
-  request: Request;
-  url: URL;
-};
+// type HandleApplicationOptions = {
+//   application: keyof typeof configData;
+//   build: string;
+//   r2Bucket: R2Bucket;
+//   request: Request;
+//   url: URL;
+// };
 
-const handleApplication = async (options: HandleApplicationOptions) => {
-  const overrides = await getCookie({ request: options.request });
-  console.log(`> worker:${options.application}:overrides: `, JSON.stringify(overrides));
-  const targetHost =
-    config[options.application].environment[overrides?.environment ?? "production"].host;
-  const shouldRedirect = options.url.host !== targetHost;
+// const handleApplication = async (options: HandleApplicationOptions) => {
+//   const overrides = await getCookie({ request: options.request });
+//   console.log(`> worker:${options.application}:overrides: `, JSON.stringify(overrides));
+//   const targetHost =
+//   configData[options.application].environment[overrides?.environment ?? "production"].host;
+//   const shouldRedirect = options.url.host !== targetHost;
 
-  if (shouldRedirect) {
-    const redirectLocation =
-      `${
-        overrides?.environment === "production" ? "https" : "http"
-      }://${targetHost}` + options.url.pathname;
-    console.log(
-      `> worker:${options.application}:redirect: `,
-      `${options.url.host} -vs- ${targetHost}`
-    );
-    console.log(`> worker:${options.application}:location: `, redirectLocation);
+//   if (shouldRedirect) {
+//     const redirectLocation =
+//       `${
+//         overrides?.environment === "production" ? "https" : "http"
+//       }://${targetHost}` + options.url.pathname;
+//     console.log(
+//       `> worker:${options.application}:redirect: `,
+//       `${options.url.host} -vs- ${targetHost}`
+//     );
+//     console.log(`> worker:${options.application}:location: `, redirectLocation);
 
-    return new Response("", {
-      status: 307,
-      headers: new Headers({
-        Location: redirectLocation,
-      }),
-    });
-  }
+//     return new Response("", {
+//       status: 307,
+//       headers: new Headers({
+//         Location: redirectLocation,
+//         // "Access-Control-Allow-Credentials": "true",
+//         // "Access-Control-Allow-Origin": options.request.headers.get("origin") ?? "",
+//         // "Access-Control-Expose-Headers": "Set-Cookie",
+//         // "Set-Cookie": options.request.headers.get("Cookie") ?? "",
+//       }),
+//     });
+//   }
 
-  return fetchAsset({
-    build: overrides?.build ?? options.build,
-    pathname: options.url.pathname,
-    r2Bucket: options.r2Bucket,
-  });
-};
+//   return fetchAsset({
+//     build: overrides?.build ?? options.build,
+//     pathname: options.url.pathname,
+//     r2Bucket: options.r2Bucket,
+//   });
+// };
 
 export default {
   async fetch(
@@ -86,7 +91,13 @@ export default {
     ) {
       return new Response(
         // Pretty format (readability > minification for experimentation).
-        JSON.stringify(config, null, 2)
+        JSON.stringify(configData, null, 2),
+        {
+          headers: {
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Origin": request.headers.get("origin") ?? "",
+          }
+        }
       );
     }
 
@@ -101,7 +112,7 @@ export default {
     if (
       url.host.startsWith("composer.") // Xxxxxx
     ) {
-      return handleApplication({
+      return handleAssetRequest({
         application: "composer",
         build: "main",
         r2Bucket: env.COMPOSER_BUCKET,
@@ -113,7 +124,7 @@ export default {
     if (
       url.host.startsWith("shell.") // Xxxxxx
     ) {
-      return handleApplication({
+      return handleAssetRequest({
         application: "shell",
         build: "main",
         r2Bucket: env.SHELL_BUCKET,
@@ -125,7 +136,7 @@ export default {
     if (
       url.host.startsWith("potato.") // Xxxxxx
     ) {
-      return handleApplication({
+      return handleAssetRequest({
         application: "potato",
         build: "main",
         r2Bucket: env.POTATO_BUCKET,

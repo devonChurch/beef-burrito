@@ -1,6 +1,6 @@
 import * as Cookies from "es-cookie";
-import { ComposerEntry, ComposerApiSetBody } from "../types";
 import { config } from "../../config";
+import { ComposerEntry, ComposerApiSetBody } from "../types";
 
 type SetCookieOptions = {
   request: Request;
@@ -15,7 +15,7 @@ export const getCookie = async ({
   // -------
   // get referrer
   // + turn into host
-  // + find host in cofig
+  // + find host in config
   // + extract application key
 
   // Build a list of host -vs- application

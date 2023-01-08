@@ -7,45 +7,14 @@ type SetCookieOptions = {
 };
 
 export const set = async ({ request }: SetCookieOptions) => {
-  // const { base, dependencies = [] } =
-  //   ((await request?.json()) as ComposerApiSetBody) ?? {};
-
-  // const createSanitizedEntry = ({
-  //   application,
-  //   environment,
-  //   build,
-  // }: ComposerEntry) => ({
-  //   ...(application && { application }),
-  //   ...(environment && { environment }),
-  //   ...(build && { build }),
-  // });
-
-  // const cookieKey = base.application;
-
-  // const cookieValue = [base, ...dependencies].map(createSanitizedEntry);
-
-  // const cookieEncoded = Cookies.encode(cookieKey, JSON.stringify(cookieValue), {
-  //   secure: true,
-  //   expires: 7, // Days.
-  //   path: "/",
-  //   domain: "beef-burrito.devon.pizza",
-  //   sameSite: "none",
-  // });
-
-  // console.log("> worker:api/set:key ", cookieKey);
-  // console.log("> worker:api/set:value ", cookieValue);
-  // console.log("> worker:api/set:encoded ", cookieEncoded);
-
   const payload = ((await request?.json()) as ComposerApiSetBody);
 
   /**
    * @todo ZOD validation!
    */
 
-  const cookieHeaders = createCookieHeadersFromPayload({
-    payload,
-    origin: new URL(request.url).origin // request.headers.get("origin") || "",
-  });
+  const {origin} = new URL(request.headers.get("referer") ?? request.url);
+  const cookieHeaders = createCookieHeadersFromPayload({ payload, origin });
 
   return new Response(
     // Body:

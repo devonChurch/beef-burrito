@@ -1,6 +1,6 @@
 import { data as configData } from "./config";
 import { handleAssetRequest } from "./application";
-import { set as setCookie } from "./composer"
+import { set as setCookie, get as getCookie } from "./composer"
 // import { setCookie, getCookie } from "./composer";
 
 /**
@@ -89,13 +89,14 @@ export default {
     if (
       url.host.startsWith("config.") // Xxxxx
     ) {
+      const { origin } = new URL(request.headers.get("referer") ?? request.url);
       return new Response(
         // Pretty format (readability > minification for experimentation).
         JSON.stringify(configData, null, 2),
         {
           headers: {
             "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Allow-Origin": request.headers.get("origin") ?? "",
+            "Access-Control-Allow-Origin": origin,
           }
         }
       );
@@ -107,6 +108,14 @@ export default {
       request.method === "POST" // Xxxxx
     ) {
       return await setCookie({ request });
+    }
+
+    if (
+      url.host.startsWith("composer.") && // Xxxxx
+      url.pathname.startsWith("/api/get") && // Xxxxx
+      request.method === "GET" // Xxxxx
+    ) {
+      return await getCookie({ request });
     }
 
     if (

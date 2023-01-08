@@ -20,7 +20,7 @@ export const handleAssetRequest = async (options: HandleAssetRequestOptions) => 
 
   const target = getBaseAndAppHostTargets(options.request);
   const cookies = options.request.headers.get("Cookie") ?? "";
-  const payload = createCookiePayloadFromRequest(target, cookies);
+  const payload = createCookiePayloadFromRequest(target.base, cookies);
   const override = extractOverridesFromCookie(target, payload);
   console.log(`> worker:${options.application}:override: `, JSON.stringify(override));
   const targetHost = configData[options.application].environment[override?.environment ?? "production"].host;
@@ -52,7 +52,7 @@ export const handleAssetRequest = async (options: HandleAssetRequestOptions) => 
     });
 
     return new Response("", {
-      status: 303, // 307,
+      status: 307,
       headers: new Headers({
         Location: redirectLocation,
         ...cookieHeaders,

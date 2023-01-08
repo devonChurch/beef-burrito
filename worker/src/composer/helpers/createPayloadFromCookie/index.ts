@@ -126,9 +126,9 @@ export type Target = {
  * }
  */
 const reconstructPayloadFromCookie = (
-  target: Target,
+  baseKey: string,
   cookies: string | null
-) => {
+): ComposerApiSetBody | undefined => {
   const cookieDictionary = Cookies.parse(cookies || "");
 
   /**
@@ -136,7 +136,7 @@ const reconstructPayloadFromCookie = (
    * 
    * ALL OTHER COMPOSITION ENTRIES ARE IRRELEVANT FOR THIS REQUEST SCENARIO!
    */
-  const cookieItem = cookieDictionary[target.base];
+  const cookieItem = cookieDictionary[baseKey];
 
   /**
    * Not every request will have a composition associated with it (which is fine). We bail out and
@@ -153,7 +153,7 @@ const reconstructPayloadFromCookie = (
      * @note The "dependencies" key/value pair are NOT always present (e.g. we might only be composing
      * the "base" target), so we conditionally omit if required.
      */
-    ...(dependencies && dependencies),
+    ...(dependencies && { dependencies }),
   };
 };
 
@@ -162,10 +162,10 @@ const reconstructPayloadFromCookie = (
  */
 export const createCookiePayloadFromRequest = (
   // request: Request
-  target: Target,
+  baseKey: string,
   cookies: string
 ): ComposerApiSetBody | undefined => {
   // const target = getBaseAndAppHostTargets(request);
   // const cookies = request.headers.get("Cookie");
-  return reconstructPayloadFromCookie(target, cookies);
+  return reconstructPayloadFromCookie(baseKey, cookies);
 };
